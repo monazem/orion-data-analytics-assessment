@@ -1,0 +1,44 @@
+# =============================================================================
+# Pipeline Configuration
+# All paths and tunable parameters live here, NOT in the Python source files.
+# This is the senior-engineering pattern: code is reusable, config is environment-specific.
+# =============================================================================
+
+# ---- INPUT FILES -----------------------------------------------------------
+input:
+  sales_json:    "data/raw/Sales.json"
+  forecast_json: "data/raw/forecast.json"
+
+# ---- OUTPUT LOCATIONS ------------------------------------------------------
+output:
+  csv_dir:    "data/output/csv"
+  sqlite_db:  "data/output/sales_dwh.db"
+  dq_report:  "docs/data_quality_report.md"
+
+# ---- DATE RANGE (used to build the Date dimension) -------------------------
+# We discovered during exploration that the source covers 2008-01-01 to 2009-12-31.
+# Building the dim with a fixed range is more reproducible than deriving from data.
+date_dimension:
+  start_date: "2008-01-01"
+  end_date:   "2009-12-31"
+
+# ---- DATA QUALITY THRESHOLDS -----------------------------------------------
+# If these thresholds are exceeded, the pipeline logs a CRITICAL warning.
+# In production this could trigger an alert; for the assessment it's documentation.
+data_quality:
+  max_duplicate_pct:     5.0    # If >5% of rows are duplicates, that's worth surfacing
+  max_null_pct_critical: 95.0   # If >95% of a "should be populated" column is null, alert
+  expected_brands_count: 11     # We know the source has 11 brands; verify
+
+# ---- COLOR RECOVERY --------------------------------------------------------
+# Validation regex for color extraction from product names.
+# A "candidate color" must be alphabetic only, 3-15 characters.
+# This auto-accepts new colors in future data while filtering out model codes.
+color_recovery:
+  candidate_pattern: "^[A-Za-z]{3,15}$"
+  known_non_colors: []   # Seed empty; add words here if they ever slip through validation
+
+# ---- LOGGING ---------------------------------------------------------------
+logging:
+  level:    "INFO"
+  log_dir:  "logs"

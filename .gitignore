@@ -1,0 +1,44 @@
+# ----------------------------------------------------------
+# .gitignore — Orion Data Analytics Assessment
+# ----------------------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Data — never commit raw sources, they're large and may have licensing constraints
+data/raw/*
+!data/raw/README.md
+
+# Generated outputs — keep a small SAMPLE in repo, gitignore the full set
+data/output/csv/*.csv
+data/output/*.db
+!data/output/csv/sample_*.csv
+
+# Power BI temp files
+*.pbix.tmp
+~$*
+
+# OS noise
+Thumbs.db
+desktop.ini

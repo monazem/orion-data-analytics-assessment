@@ -1,0 +1,9 @@
+# Pipeline dependencies — pinned for reproducibility
+pandas==2.2.2
+ijson==3.3.0           # Streaming JSON parser; required for the 186MB Sales.json
+pyyaml==6.0.1          # Loading config/pipeline.yaml
+python-dateutil==2.9.0 # Robust date parsing
+
+# Development / testing
+pytest==8.2.0
+pytest-cov==5.0.0
