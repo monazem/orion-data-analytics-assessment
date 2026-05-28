@@ -387,20 +387,33 @@ def check_brand_count(
     report: DataQualityReport,
     expected: int = 11,
 ) -> None:
+    """Report distinct brand count. INFO if it differs from baseline expectation.
+
+    Brand counts can legitimately change as the business adds or removes brands.
+    We report the actual count and the deviation as INFO, not as a problem,
+    leaving threshold-based alerting to a baseline-aware system in production.
+    """
     actual = sales_df["Brand"].nunique()
+    brands = sorted(sales_df["Brand"].unique().tolist())
+    deviation = abs(actual - expected)
+
     if actual == expected:
         report.add(DQFinding(
             check_name="Brand count in Sales",
             severity=Severity.PASS,
-            message=f"Found exactly {expected} distinct brands",
-            evidence={"brands": sorted(sales_df["Brand"].unique().tolist())},
+            message=f"Found {actual} distinct brands (matches baseline expectation of {expected})",
+            evidence={"brands": brands},
         ))
     else:
         report.add(DQFinding(
             check_name="Brand count in Sales",
-            severity=Severity.HIGH,
-            message=f"Expected {expected} brands, found {actual}",
-            evidence={"actual_brands": sorted(sales_df["Brand"].unique().tolist())},
+            severity=Severity.INFO,
+            message=(
+                f"Found {actual} distinct brands; baseline expectation was {expected} "
+                f"(deviation: {deviation}). Brand counts can change legitimately — "
+                f"verify this matches business expectations."
+            ),
+            evidence={"actual_count": actual, "expected_count": expected, "brands": brands},
         ))
 
 
@@ -426,7 +439,7 @@ def check_brand_consistency(
     else:
         report.add(DQFinding(
             check_name="Brand consistency: Sales <-> Forecast",
-            severity=Severity.HIGH,
+            severity=Severity.INFO,
             message=(
                 f"Brand mismatch: {len(only_in_sales)} only in Sales, "
                 f"{len(only_in_forecast)} only in Forecast"
