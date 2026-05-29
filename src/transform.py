@@ -206,17 +206,21 @@ def build_dim_country(sales_clean: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def build_dim_brand(sales_clean: pd.DataFrame) -> pd.DataFrame:
-    """Build the brand dimension. Conformed: used by both Sales (via Product) and Forecast.
+    """Build the brand dimension with surrogate brand_key.
 
-    Brand is its own dimension (not just a column in dim_product) precisely so
-    that fact_forecast — which lacks a product_key — can still filter by brand
-    through a direct relationship.
+    Conformed dim: used by both fact_sales (via dim_product) and fact_forecast.
+    Uses a surrogate integer key (brand_key) for consistency with other dims
+    and to avoid string-based joins in the fact tables.
 
     Columns:
-        brand  (PK, natural — names are unique and stable)
+        brand_key  (PK, surrogate integer)
+        brand      (natural name, used for display)
     """
     brands = sorted(sales_clean["brand"].unique().tolist())
-    df = pd.DataFrame({"brand": brands})
+    df = pd.DataFrame({
+        "brand_key": range(1, len(brands) + 1),
+        "brand": brands,
+    })
     logger.info(f"Built dim_brand: {len(df)} rows -> {brands}")
     return df
 
@@ -264,23 +268,22 @@ def build_dim_geography(
 # Dimension builders — DIM_PRODUCT
 # ---------------------------------------------------------------------------
 
-def build_dim_product(sales_clean: pd.DataFrame) -> pd.DataFrame:
-    """Build the product dimension with recovered Color column.
+def build_dim_product(
+    sales_clean: pd.DataFrame,
+    dim_brand: pd.DataFrame,
+) -> pd.DataFrame:
+    """Build the product dimension with recovered Color and brand_key FK.
 
-    Uses the natural key (product_key) — verified stable across the dataset
-    (every product_key has exactly one set of attributes; no SCD needed).
-
-    The Color column from the source was 100% polluted with Subcategory values
-    and has been dropped in clean_sales(). Here we RECOVER color by parsing
-    the last word of product_name through recover_color().
+    Uses the natural key (product_key). Brand is referenced via brand_key
+    (FK to dim_brand) rather than stored as a string.
 
     Columns:
-        product_key  (PK, natural)
+        product_key   (PK, natural)
         product_name
-        brand        (FK to dim_brand)
+        brand_key     (FK to dim_brand)
         category
         subcategory
-        color        (recovered; NULL for Download Games / digital products)
+        color         (recovered; NULL for digital products)
     """
     cols = ["product_key", "product_name", "brand", "category", "subcategory"]
     df = (
@@ -290,9 +293,15 @@ def build_dim_product(sales_clean: pd.DataFrame) -> pd.DataFrame:
         .reset_index(drop=True)
     )
 
+    # Resolve brand_key by joining to dim_brand, then drop the brand string
+    df = df.merge(dim_brand, on="brand", how="left")
+    df = df.drop(columns=["brand"])
+
+    # Reorder columns for readability
+    df = df[["product_key", "product_name", "brand_key", "category", "subcategory"]]
+
     df["color"] = df["product_name"].apply(recover_color)
 
-    # Log color recovery summary
     total = len(df)
     recovered = df["color"].notna().sum()
     distinct_colors = sorted(df["color"].dropna().unique().tolist())
@@ -428,26 +437,27 @@ def build_fact_sales(
 def build_fact_forecast(
     forecast_clean: pd.DataFrame,
     dim_country: pd.DataFrame,
+    dim_brand: pd.DataFrame,
 ) -> pd.DataFrame:
     """Build the forecast fact at Country x Brand x Year grain.
 
     Columns:
         country_key      (FK to dim_country)
-        brand            (FK to dim_brand)
+        brand_key        (FK to dim_brand)
         year             (FK to dim_date.year)
         forecast_amount  (additive measure)
-
-    Note: this fact has a coarser grain than fact_sales. State and City-level
-    filters do NOT apply here — by design. The model returns BLANK for those
-    via DAX, communicating to the user that forecast data is available at
-    Country grain only.
     """
     df = forecast_clean.merge(dim_country, on="country", how="left")
-    df = df[["country_key", "brand", "year", "forecast_amount"]]
+    df = df.merge(dim_brand, on="brand", how="left")
+    df = df[["country_key", "brand_key", "year", "forecast_amount"]]
 
-    null_fk = df["country_key"].isna().sum()
-    if null_fk:
-        logger.warning(f"fact_forecast has {null_fk} rows with no country_key resolved!")
+    null_country = df["country_key"].isna().sum()
+    null_brand = df["brand_key"].isna().sum()
+    if null_country or null_brand:
+        logger.warning(
+            f"fact_forecast has unresolved FKs: "
+            f"{null_country} country, {null_brand} brand"
+        )
 
     total_forecast = df["forecast_amount"].sum()
     logger.info(
@@ -498,12 +508,12 @@ def transform_all(
     dim_geography = build_dim_geography(sales_clean, dim_country)
 
     # Stage 3: Build the bigger dims (depend on geography)
-    dim_product = build_dim_product(sales_clean)
+    dim_product = build_dim_product(sales_clean, dim_brand)
     dim_customer = build_dim_customer(sales_clean, dim_geography)
 
     # Stage 4: Build facts (depend on customer for geography_key resolution)
     fact_sales = build_fact_sales(sales_clean, dim_customer)
-    fact_forecast = build_fact_forecast(forecast_clean, dim_country)
+    fact_forecast = build_fact_forecast(forecast_clean, dim_country, dim_brand)
 
     tables = {
         "dim_date": dim_date,
