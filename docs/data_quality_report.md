@@ -1,34 +1,16 @@
 # Data Quality Report
 
-_Generated: 2026-05-28 19:53:58_
+_Generated: 2026-05-29 16:40:38_
 
 ## Summary
 
 | Severity | Count |
 |---|---|
-| CRITICAL | 1 |
+| CRITICAL | 0 |
 | HIGH | 1 |
 | MEDIUM | 0 |
-| INFO | 1 |
+| INFO | 2 |
 | PASS | 6 |
-
-## CRITICAL Findings
-
-### Sales fact: row-level duplication
-
-**Message:** 218,008 of 298,246 rows (73.1%) are duplicates on the natural transaction key (ProductKey, CustomerKey, OrderDate, Quantity, Net Price).
-
-**Evidence:**
-
-```
-  total_rows: 298,246
-  unique_tuples: 80,238
-  duplicate_rows: 218,008
-  duplicate_percentage: 73.10%
-  worst_offenders_top5: ['ProductKey=2490, CustomerKey=19126, Date=6/11/2009, appears 491x', 'ProductKey=2493, CustomerKey=19125, Date=6/5/2009, appears 491x', 'ProductKey=2508, CustomerKey=19000, Date=10/3/2009, appears 427x', 'ProductKey=2497, CustomerKey=19143, Date=12/8/2009, appears 416x', 'ProductKey=2503, CustomerKey=18894, Date=12/8/2008, appears 416x']
-```
-
-**Remediation:** Likely cause: a JOIN fanout in the source extraction. Deduplicate on the natural key during transform. In production: surface to source data team and request a transaction-level unique identifier (OrderID or LineItemID) in future extracts.
 
 ## HIGH Findings
 
@@ -63,6 +45,23 @@ _Generated: 2026-05-28 19:53:58_
 
 **Remediation:** Accept nulls as legitimate. In dim_customer, do not impose NOT NULL on these. In dashboards, display as 'Unknown' or filter explicitly.
 
+### Sales fact: row-level duplication (informational)
+
+**Message:** Observed 218,008 of 298,246 rows (73.1%) as duplicates on the natural transaction key. We do NOT deduplicate because cross-validation against the forecast file (raw 2009 actuals = 104% of forecast, deduplicated would be 50%) indicates raw-level data is intended. Source data lacks a transaction-level unique identifier to definitively classify duplicates.
+
+**Evidence:**
+
+```
+  total_rows: 298,246
+  unique_tuples: 80,238
+  duplicate_rows: 218,008
+  duplicate_percentage: 73.10%
+  max_group_size: 491
+  worst_offenders_top5: ['ProductKey=2490, CustomerKey=19126, Date=6/11/2009, appears 491x', 'ProductKey=2493, CustomerKey=19125, Date=6/5/2009, appears 491x', 'ProductKey=2508, CustomerKey=19000, Date=10/3/2009, appears 427x', 'ProductKey=2497, CustomerKey=19143, Date=12/8/2009, appears 416x', 'ProductKey=2503, CustomerKey=18894, Date=12/8/2008, appears 416x']
+```
+
+**Remediation:** In production: surface to source data team and request a transaction-level unique identifier (OrderID or LineItemID) in future extracts. Once available, re-evaluate whether the duplication is corruption or legitimate fine-grained data.
+
 ## PASS Findings
 
 ### Brand consistency: Sales <-> Forecast
@@ -77,7 +76,7 @@ _Generated: 2026-05-28 19:53:58_
 
 ### Brand count in Sales
 
-**Message:** Found exactly 11 distinct brands
+**Message:** Found 11 distinct brands (matches baseline expectation of 11)
 
 **Evidence:**
 

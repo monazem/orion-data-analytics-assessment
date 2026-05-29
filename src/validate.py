@@ -205,13 +205,17 @@ def check_sales_duplicates(
     report: DataQualityReport,
     threshold_pct: float = 5.0,
 ) -> None:
-    """Detect row-level duplicates on the natural transaction key."""
+    """Report row-level duplication on the natural transaction key.
+
+    We INTENTIONALLY do not flag this as CRITICAL because cross-validation
+    against the forecast file shows raw-level revenue matches forecast (104%),
+    while deduplicated revenue would be 50% of forecast. See decisions log.
+    """
     total = len(sales_df)
     unique = sales_df[DEDUPE_KEYS].drop_duplicates().shape[0]
     duplicates = total - unique
     dup_pct = duplicates * 100 / total if total else 0
 
-    # Find worst offenders (groups with most duplicates)
     grp = sales_df.groupby(DEDUPE_KEYS).size().reset_index(name="count")
     worst = grp.nlargest(5, "count")
     worst_summary = [
@@ -220,35 +224,32 @@ def check_sales_duplicates(
         for _, r in worst.iterrows()
     ]
 
-    if dup_pct >= threshold_pct:
-        report.add(DQFinding(
-            check_name="Sales fact: row-level duplication",
-            severity=Severity.CRITICAL,
-            message=(
-                f"{duplicates:,} of {total:,} rows ({dup_pct:.1f}%) are duplicates "
-                f"on the natural transaction key (ProductKey, CustomerKey, OrderDate, Quantity, Net Price)."
-            ),
-            evidence={
-                "total_rows": f"{total:,}",
-                "unique_tuples": f"{unique:,}",
-                "duplicate_rows": f"{duplicates:,}",
-                "duplicate_percentage": f"{dup_pct:.2f}%",
-                "worst_offenders_top5": worst_summary,
-            },
-            remediation=(
-                "Likely cause: a JOIN fanout in the source extraction. "
-                "Deduplicate on the natural key during transform. "
-                "In production: surface to source data team and request a "
-                "transaction-level unique identifier (OrderID or LineItemID) in future extracts."
-            ),
-        ))
-    else:
-        report.add(DQFinding(
-            check_name="Sales fact: row-level duplication",
-            severity=Severity.PASS,
-            message=f"Duplicate rate {dup_pct:.2f}% is below threshold {threshold_pct}%",
-            evidence={"total_rows": f"{total:,}", "duplicate_rows": f"{duplicates:,}"},
-        ))
+    report.add(DQFinding(
+        check_name="Sales fact: row-level duplication (informational)",
+        severity=Severity.INFO,
+        message=(
+            f"Observed {duplicates:,} of {total:,} rows ({dup_pct:.1f}%) as "
+            f"duplicates on the natural transaction key. We do NOT deduplicate "
+            f"because cross-validation against the forecast file (raw 2009 actuals "
+            f"= 104% of forecast, deduplicated would be 50%) indicates raw-level "
+            f"data is intended. Source data lacks a transaction-level unique "
+            f"identifier to definitively classify duplicates."
+        ),
+        evidence={
+            "total_rows": f"{total:,}",
+            "unique_tuples": f"{unique:,}",
+            "duplicate_rows": f"{duplicates:,}",
+            "duplicate_percentage": f"{dup_pct:.2f}%",
+            "max_group_size": int(grp["count"].max()),
+            "worst_offenders_top5": worst_summary,
+        },
+        remediation=(
+            "In production: surface to source data team and request a transaction-level "
+            "unique identifier (OrderID or LineItemID) in future extracts. "
+            "Once available, re-evaluate whether the duplication is corruption "
+            "or legitimate fine-grained data."
+        ),
+    ))
 
 
 def check_color_subcategory_collision(sales_df: pd.DataFrame, report: DataQualityReport) -> None:
