@@ -10,7 +10,7 @@
 
 End-to-end data engineering solution that ingests unstructured sales data, applies data quality investigation, transforms it into a relational star schema, and powers an analytical Power BI dashboard for the sales team.
 
-**Stack:** Python 3.10+, pandas, SQLite, Power BI Desktop.
+**Stack:** Python 3.10+, pandas, Power BI Desktop.
 
 ---
 
@@ -44,7 +44,7 @@ python -m src.pipeline
 ├── config/           # Configuration (paths, parameters, color whitelist seed)
 ├── data/
 │   ├── raw/          # Source files (gitignored — see data/raw/README.md)
-│   └── output/       # Generated artifacts: CSVs + SQLite DB
+│   └── output/       # Generated artifacts: CSV files for Power BI
 ├── docs/             # Data model diagram, data quality report, decisions log
 ├── logs/             # Pipeline run logs (gitignored)
 ├── powerbi/          # .pbix file + DAX measures documentation

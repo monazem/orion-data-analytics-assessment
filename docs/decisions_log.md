@@ -15,7 +15,7 @@ This document records every significant engineering decision made during the ass
 7. [Country-level conformity for Geography (not State or City)](#7-country-level-conformity)
 8. [Deduplication strategy on the fact table](#8-deduplication-strategy)
 9. [Color column recovery via product name parsing](#9-color-column-recovery)
-10. [Output as both CSV and SQLite](#10-dual-output-formats)
+10. [Output format selection](#10-output-format-selection)
 11. [Config-driven pipeline (YAML)](#11-config-driven-pipeline)
 
 ---
@@ -47,7 +47,7 @@ _To be expanded._
 ## 9. Color Column Recovery
 _To be expanded._
 
-## 10. Dual Output Formats
+## 10. Output Format Selection
 _To be expanded._
 
 ## 11. Config-Driven Pipeline
