@@ -12,7 +12,6 @@ input:
 # ---- OUTPUT LOCATIONS ------------------------------------------------------
 output:
   csv_dir:    "data/output/csv"
-  sqlite_db:  "data/output/sales_dwh.db"
   dq_report:  "docs/data_quality_report.md"
 
 # ---- DATE RANGE (used to build the Date dimension) -------------------------
