@@ -26,7 +26,7 @@ ENV/
 logs/
 *.log
 
-# Data — never commit raw sources, they're large and may have licensing constraints
+# Data 
 data/raw/*
 !data/raw/README.md
 
