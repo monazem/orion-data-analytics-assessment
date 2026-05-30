@@ -51,3 +51,5 @@ I extract the last word and validate it's 3-15 letters only (regex), which filte
 Customer name, education, and occupation are personally identifiable or close to it. Even on a fictional dataset, the engineering practice should be the same as production.
 
 The dashboard shows customer code instead of name. The PII columns are loaded into the model but hidden from the report view so nobody accidentally drags them onto a visual.
+
+

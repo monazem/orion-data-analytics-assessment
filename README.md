@@ -35,6 +35,7 @@ Each step can also run on its own: `python -m src.extract`, `python -m src.valid
 
 ## Project layout
 
+```
 src/                  ETL code
 config/               YAML config
 data/raw/             Source JSON (gitignored)
@@ -42,6 +43,14 @@ data/output/csv/      8 CSVs after running
 docs/                 Documentation
 powerbi/              The .pbix dashboard
 logs/                 Per-run logs
+```
+## Data model
+
+![Data Model](./docs/data_model.PNG)
+
+8 tables. Star schema. Conformed dimensions: `dim_brand` and `dim_country` (filter both fact tables). Two snowflake links: `dim_geography → dim_country` and `dim_product → dim_brand`.
+
+`dim_date` is intentionally not connected to `fact_forecast` — forecast has no daily grain. See `decisions_log.md` §5.
 
 ## The dashboard
 

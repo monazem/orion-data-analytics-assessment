@@ -1,4 +1,4 @@
-# Pipeline dependencies — pinned for reproducibility
+# Pipeline dependencies 
 pandas==2.2.2
 ijson==3.3.0           # Streaming JSON parser; required for the 186MB Sales.json
 pyyaml==6.0.1          # Loading config/pipeline.yaml
