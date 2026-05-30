@@ -1,80 +1,54 @@
-# Orion Digital Solutions — Data & Analytics Engineer Technical Assessment
+# Orion Sales Analytics Pipeline
 
-**Author:** Mohamed Nazem Hendawy
-**Submitted:** [Date]
-**Repository:** [GitHub link]
+Built for the Orion Digital Solutions Data & Analytics Engineer technical assessment.
 
----
+A Python ETL pipeline that turns 298K raw sales records into a clean star schema, plus a Power BI dashboard on top.
 
-## Project Overview
+## What it does
 
-End-to-end data engineering solution that ingests unstructured sales data, applies data quality investigation, transforms it into a relational star schema, and powers an analytical Power BI dashboard for the sales team.
+1. Reads Sales.json (186 MB) and forecast.json
+2. Runs 9 data quality checks and writes a markdown report
+3. Builds 6 dimensions + 2 facts, ready for Power BI
+4. Saves 8 CSV files
 
-**Stack:** Python 3.10+, pandas, Power BI Desktop.
+Total runtime: under 10 seconds.
 
----
+## Three things I found in the data
 
-## Quick Start
+**The Color column is broken.** Every row has the Subcategory in it instead of an actual color. Fixed by parsing the last word of the product name. Recovered colors for 95% of products.
+
+**73% of sales rows look like duplicates.** I initially deduplicated them — but then I noticed the forecast file matches the *raw* totals at 104%, while deduplicated totals would be 50% of forecast. So I kept the raw rows and documented why. Full reasoning in `docs/decisions_log.md`.
+
+## How to run it
 
 ```bash
-# Clone and set up
-git clone <repo-url>
-cd orion-data-analytics-assessment
 python -m venv venv
-source venv/bin/activate          # macOS / Linux
-# venv\Scripts\activate           # Windows PowerShell
+venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# Place source data
-cp /path/to/Sales.json     data/raw/
-cp /path/to/forecast.json  data/raw/
+# Put Sales.json and forecast.json in data/raw/
 
-# Run the pipeline
 python -m src.pipeline
-
-# Outputs land in data/output/csv/ and data/output/sales_dwh.db
 ```
 
----
+Each step can also run on its own: `python -m src.extract`, `python -m src.validate`, etc.
 
-## Repository Structure
+## Project layout
 
-```
-.
-├── config/           # Configuration (paths, parameters, color whitelist seed)
-├── data/
-│   ├── raw/          # Source files (gitignored — see data/raw/README.md)
-│   └── output/       # Generated artifacts: CSV files for Power BI
-├── docs/             # Data model diagram, data quality report, decisions log
-├── logs/             # Pipeline run logs (gitignored)
-├── powerbi/          # .pbix file + DAX measures documentation
-├── src/              # ETL pipeline source
-│   ├── extract.py
-│   ├── validate.py
-│   ├── transform.py
-│   ├── load.py
-│   ├── pipeline.py
-│   └── utils.py
-└── tests/            # Unit tests for transformations
-```
+src/                  ETL code
+config/               YAML config
+data/raw/             Source JSON (gitignored)
+data/output/csv/      8 CSVs after running
+docs/                 Documentation
+powerbi/              The .pbix dashboard
+logs/                 Per-run logs
 
----
+## The dashboard
 
-## Documentation
-
-- **[Data Model](docs/data_model.md)** — Star schema design, conformed dimensions, grain decisions
-- **[Data Quality Report](docs/data_quality_report.md)** — Findings, evidence, handling
-- **[Decisions Log](docs/decisions_log.md)** — Major engineering choices with alternatives and rationale
-- **[DAX Measures](powerbi/dax_measures.md)** — All Power BI measures, organized by display folder
-
----
-
-## Key Findings at a Glance
-
-To be filled in after pipeline execution.
-
----
-
-## What I Would Do Differently at Production Scale
-
-To be filled in during final write-up.
+`powerbi/Orion_Sales_Dashboard.pbix` — one page with:
+- KPI cards (Total Sales, YoY, Forecast Achievement %, Top Customer)
+- Monthly sales trend (2008 vs 2009)
+- Sales by country
+- Top 10 products
+- Forecast vs Actual by brand
+- Slicers for year, country, state, brand
