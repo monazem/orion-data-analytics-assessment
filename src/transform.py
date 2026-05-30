@@ -173,9 +173,9 @@ def build_dim_date(start_date: str, end_date: str) -> pd.DataFrame:
     df["month_short"]  = df["date"].dt.strftime("%b")
     df["year_month"]   = df["date"].dt.strftime("%Y-%m")
     df["day"]          = df["date"].dt.day
-    df["day_of_week"]  = df["date"].dt.dayofweek
+    df["day_of_week"]  = df["date"].dt.dayofweek + 1   # 1=Monday, 7=Sunday for consistency with common business conventions
     df["day_name"]     = df["date"].dt.day_name()
-    df["is_weekend"]   = df["day_of_week"].isin([5, 6])
+    df["is_weekend"]   = df["day_of_week"].isin([6, 7])   # Saturday=6, Sunday=7
     df["week_of_year"] = df["date"].dt.isocalendar().week.astype(int)
 
     logger.info(f"Built dim_date: {len(df)} rows ({len(df.columns)} columns)")
