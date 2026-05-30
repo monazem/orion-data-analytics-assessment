@@ -13,7 +13,7 @@ A Python ETL pipeline that turns 298K raw sales records into a clean star schema
 
 Total runtime: under 10 seconds.
 
-## Three things I found in the data
+## Two things I found in the data
 
 **The Color column is broken.** Every row has the Subcategory in it instead of an actual color. Fixed by parsing the last word of the product name. Recovered colors for 95% of products.
 
@@ -39,10 +39,10 @@ Each step can also run on its own: `python -m src.extract`, `python -m src.valid
 src/                  ETL code
 config/               YAML config
 data/raw/             Source JSON (gitignored)
-data/output/csv/      8 CSVs after running
+data/output/csv/      8 CSVs after running the pipline
 docs/                 Documentation
 powerbi/              The .pbix dashboard
-logs/                 Per-run logs
+logs/                 Per-run logs (gitignored)
 ```
 ## Data model
 
