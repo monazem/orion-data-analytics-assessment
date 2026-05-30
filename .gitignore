@@ -30,11 +30,6 @@ logs/
 data/raw/*
 !data/raw/README.md
 
-# Generated outputs — keep a small SAMPLE in repo, gitignore the full set
-data/output/csv/*.csv
-data/output/*.db
-!data/output/csv/sample_*.csv
-
 # Power BI temp files
 *.pbix.tmp
 ~$*
